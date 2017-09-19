@@ -103,10 +103,12 @@ def control_loop():
                 
                 servo_index_x += delta_x * -0.002
                 print(str(face_pos_x) + ", " + str(delta_x))
-                SERVO.set(0, servo_index_x)
+        
             else:
-                SERVO.set(0, 0.5 - math.sin(index) * 0.3)
+                servo_index_x = 0.5 - math.sin(index) * 0.3
+                1+1
                 
+            SERVO.set(0, servo_index_x)
             time.sleep(0.001)
 
     except KeyboardInterrupt:
