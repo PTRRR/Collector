@@ -27,9 +27,8 @@ stepper_index = 0
 SERVO = Servo()
 #SERVO.setClampPulseLength(145, 490)
 servo_offset_x = random.random() * 1000
-servo_offset_y = random.random() * 1000
 servo_index_x = 0.45
-servo_index_y = 0
+stepper_target = 0
 
 # Face detection
 # Get cascades pathes
@@ -81,32 +80,31 @@ def photo_thread():
 # Motors control loop
 def control_loop():
     global STEPPER, SERVO, CURRENT_FACE
-    global servo_index_x, servo_offset_x, servo_index_y, servo_offset_y
+    global servo_index_x, servo_offset_x, stepper_target
     index = 0
-    
+    stepper_index = 0
     
     try:
         while CONTROL_THREAD.stopped() is not True:
-            index += 0.001
             
-            STEPPER.setVelocity((20 - STEPPER.getAngle()) * 0.1)
             #SERVO.set(0, 0.5 - math.sin(index) * 0.1)
             #SERVO.set(0, 0.5)
+            stepper_index += 0.001
             
             # Check if there is a current face to track
             if CURRENT_FACE is not None:
                 face_pos_x = CURRENT_FACE[0] + CURRENT_FACE[2] / 2
-                face_pos_y = CURRENT_FACE[1] + CURRENT_FACE[3] / 2
-                n_face_pos_x = (face_pos_x - TRACKING_SCREEN[0] * 0.5) / (TRACKING_SCREEN[0] * 0.5)
-                n_face_pos_y = (face_pos_y - TRACKING_SCREEN[1] * 0.5) / (TRACKING_SCREEN[1] * 0.5)
                 delta_x = (face_pos_x - TRACKING_SCREEN[0] * 0.5) / (TRACKING_SCREEN[0] * 0.5)
-                
                 servo_index_x += delta_x * -0.002
-                print(str(face_pos_x) + ", " + str(delta_x))
         
+                STEPPER.enable(True)
+                face_pos_y = CURRENT_FACE[1] + CURRENT_FACE[3] / 2
+                delta_y = (face_pos_y - TRACKING_SCREEN[1] * 0.5) / (TRACKING_SCREEN[1] * 0.5)
+                STEPPER.setVelocity(delta_y * 4)
             else:
+                STEPPER.enable(False)
+                index += 0.001
                 servo_index_x = 0.5 - math.sin(index) * 0.3
-                1+1
                 
             SERVO.set(0, servo_index_x)
             time.sleep(0.001)
@@ -206,7 +204,7 @@ while run:
     
     
     CAPTURE.truncate(0)
-    cv2.imshow("Frame", IMAGE)
+    #cv2.imshow("Frame", IMAGE)
     
     key = cv2.waitKey(1) & 0xFF
     if key == ord("q"):
