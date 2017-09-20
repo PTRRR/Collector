@@ -9,6 +9,7 @@ class Servo():
         self.FREQUENCY = 60
         self.CLAMP_VALUES = [[self.MIN_PULSE_LENGTH, self.MAX_PULSE_LENGTH]] * 15
         self.pwm = PWM(self.ADDRESSE)
+        self.INDEX = 0
         
         print(self.CLAMP_VALUES)
         
@@ -28,5 +29,9 @@ class Servo():
         elif _normalized_value < 0:
             _normalized_value = 0
             
+        self.INDEX = _normalized_value
         self.pwm.setPWM(_channel, 0, int(round(self.CLAMP_VALUES[_channel][0] + (self.CLAMP_VALUES[_channel][1] - self.CLAMP_VALUES[_channel][0]) * _normalized_value)))
+        
+    def getIndex(self):
+        return self.INDEX
         

@@ -27,7 +27,7 @@ stepper_index = 0
 SERVO = Servo()
 #SERVO.setClampPulseLength(145, 490)
 servo_offset_x = random.random() * 1000
-servo_index_x = 0.45
+servo_index_x = 0.1
 stepper_target = 0
 
 # Face detection
@@ -83,6 +83,7 @@ def control_loop():
     global servo_index_x, servo_offset_x, stepper_target
     index = 0
     stepper_index = 0
+    servo_target = 0
     
     try:
         while CONTROL_THREAD.stopped() is not True:
@@ -104,8 +105,10 @@ def control_loop():
             else:
                 STEPPER.enable(False)
                 index += 0.001
-                servo_index_x = 0.5 - math.sin(index) * 0.3
+                servo_target = 0.5 - math.sin(index) * 0.3
+                servo_index_x += (servo_target - servo_index_x) * 0.005
                 
+            
             SERVO.set(0, servo_index_x)
             time.sleep(0.001)
 
@@ -131,10 +134,10 @@ DEFINITION_MULTIPLIER = 1
 CAMERA = PiCamera()
 CAMERA.resolution = (int(1024 * 1.5), int(768 * 1.5))
 CAMERA.framerate = 32
-TRACKING_SCREEN = [160, 120]
-CAPTURE = PiRGBArray(CAMERA, size = (160, 120))
+TRACKING_SCREEN = [int(160 * DEFINITION_MULTIPLIER), int(120 * DEFINITION_MULTIPLIER)]
+CAPTURE = PiRGBArray(CAMERA, size = (int(160 * DEFINITION_MULTIPLIER), int(120 * DEFINITION_MULTIPLIER)))
 DELAY_DELETE_IMAGES = 60 * 2 # seconds -> 2min
-LOW_RES_STREAM = CAMERA.capture_continuous(CAPTURE, format = "bgr", use_video_port = True, splitter_port = 2, resize = (160, 120))
+LOW_RES_STREAM = CAMERA.capture_continuous(CAPTURE, format = "bgr", use_video_port = True, splitter_port = 2, resize = (int(160 * DEFINITION_MULTIPLIER), int(120 * DEFINITION_MULTIPLIER)))
 
 time.sleep(2.0)
 print("done warming up")
