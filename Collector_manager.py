@@ -192,7 +192,7 @@ try:
         # Take pictures every DELAY_IMAGES
         if CURRENT_TIME >= NEXT_TIME:
             file_list = glob.glob(SYNC_FOLDER_PATH + "*.jpg")
-            print("Image taken: " + str(len(file_list)))
+            #print("Image taken: " + str(len(file_list)))
             for image in file_list:
                 name = float(image.split("/")[len(image.split("/")) - 1].replace(' ', '')[:-4].upper())
                 # Delete images that are older than the DELAY_DELETE_IMAGES
@@ -232,7 +232,7 @@ try:
                         min_distance = distance
                         CURRENT_FACE = face
                         
-                print(CURRENT_FACE)
+                #print(CURRENT_FACE)
                 cv2.circle(IMAGE, (CURRENT_FACE[0] + CURRENT_FACE[2] / 2, CURRENT_FACE[1] + CURRENT_FACE[3] / 2), int(CURRENT_FACE[2] / 3), (255, 255, 255), 1)
             else:
                 CURRENT_FACE = None
