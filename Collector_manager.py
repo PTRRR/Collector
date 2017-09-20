@@ -100,7 +100,7 @@ def control_loop():
                 STEPPER.enable(True)
                 face_pos_y = CURRENT_FACE[1] + CURRENT_FACE[3] / 2
                 delta_y = (face_pos_y - TRACKING_SCREEN[1] * 0.5) / (TRACKING_SCREEN[1] * 0.5)
-                STEPPER.setVelocity(delta_y * 4)
+                STEPPER.setVelocity(delta_y * 3)
             else:
                 STEPPER.enable(False)
                 index += 0.001
@@ -205,7 +205,7 @@ try:
         
         
         CAPTURE.truncate(0)
-        #cv2.imshow("Frame", IMAGE)
+        cv2.imshow("Frame", IMAGE)
         
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):

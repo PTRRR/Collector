@@ -38,7 +38,7 @@ class Stepper():
         self.GEAR_RATIO = 1
         self.MICROSTEPPING = microStepping
         
-        self.MIN_DELAY = 0.00005
+        self.MIN_DELAY = 0.0001
         self.MAX_DELAY = 0.05
         self.DELAY = self.MIN_DELAY + (self.MAX_DELAY - self.MIN_DELAY) * 0.1
         
