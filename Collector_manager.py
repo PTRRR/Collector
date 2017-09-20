@@ -159,7 +159,7 @@ CONTROL_THREAD.start()
 
 # Global variables
 CURRENT_TIME = time.time()
-DELAY_IMAGES = 3
+DELAY_IMAGES = 5
 NEXT_TIME = CURRENT_TIME + DELAY_IMAGES
 
 # Camera
@@ -191,7 +191,7 @@ try:
       
         # Take pictures every DELAY_IMAGES
         if CURRENT_TIME >= NEXT_TIME:
-            file_list = glob.glob("/home/pi/Desktop/RPI_3_sync/*.jpg")
+            file_list = glob.glob(SYNC_FOLDER_PATH + "*.jpg")
             print("Image taken: " + str(len(file_list)))
             for image in file_list:
                 name = float(image.split("/")[len(image.split("/")) - 1].replace(' ', '')[:-4].upper())
@@ -202,11 +202,8 @@ try:
             NEXT_TIME += DELAY_IMAGES
             if FACES is not None:
                 if len(FACES) > 0:
-                    #take_thread = Thread()
-                    #take_photo.setRunFunction(photo_thread)
-                    #take_photo.start()
-                    print("photo")
-                    #CAMERA.capture('/home/pi/Desktop/RPI_3_sync/' + str(int(math.floor(time.time() * 1000))) + '.jpg')
+                    #print("photo")
+                    CAMERA.capture(SYNC_FOLDER_PATH + str(int(math.floor(time.time() * 1000))) + '.jpg')
         
         low_res = LOW_RES_STREAM.next()
         IMAGE = low_res.array
@@ -242,7 +239,7 @@ try:
         
         
         CAPTURE.truncate(0)
-        cv2.imshow("Frame", IMAGE)
+        #cv2.imshow("Frame", IMAGE)
         
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
