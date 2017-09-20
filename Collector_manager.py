@@ -147,71 +147,78 @@ for image in file_list:
 
 # Run the min loop
 run = True
-while run:
-    # Update current time
-    CURRENT_TIME = time.time()
-  
-    # Take pictures every DELAY_IMAGES
-    if CURRENT_TIME >= NEXT_TIME:
-        file_list = glob.glob("/home/pi/Desktop/RPI_3_sync/*.jpg")
-        print("Image taken: " + str(len(file_list)))
-        for image in file_list:
-            name = float(image.split("/")[len(image.split("/")) - 1].replace(' ', '')[:-4].upper())
-            # Delete images that are older than the DELAY_DELETE_IMAGES
-            if name < CURRENT_TIME - DELAY_DELETE_IMAGES:
-                os.remove(image)
+try:
+    while run:
+        # Update current time
+        CURRENT_TIME = time.time()
+      
+        # Take pictures every DELAY_IMAGES
+        if CURRENT_TIME >= NEXT_TIME:
+            file_list = glob.glob("/home/pi/Desktop/RPI_3_sync/*.jpg")
+            print("Image taken: " + str(len(file_list)))
+            for image in file_list:
+                name = float(image.split("/")[len(image.split("/")) - 1].replace(' ', '')[:-4].upper())
+                # Delete images that are older than the DELAY_DELETE_IMAGES
+                if name < CURRENT_TIME - DELAY_DELETE_IMAGES:
+                    os.remove(image)
+            
+            NEXT_TIME += DELAY_IMAGES
+            if FACES is not None:
+                if len(FACES) > 0:
+                    #take_thread = Thread()
+                    #take_photo.setRunFunction(photo_thread)
+                    #take_photo.start()
+                    print("photo")
+                    #CAMERA.capture('/home/pi/Desktop/RPI_3_sync/' + str(int(math.floor(time.time() * 1000))) + '.jpg')
         
-        NEXT_TIME += DELAY_IMAGES
+        low_res = LOW_RES_STREAM.next()
+        IMAGE = low_res.array
+        gray = cv2.cvtColor(IMAGE, cv2.COLOR_BGR2GRAY)
+        
+        # Run face detection as soon as one has ended
+        if FACE_DETECTOR is None:
+            FACE_DETECTOR = Thread()
+            FACE_DETECTOR.setRunFunction(face_detection)
+            FACE_DETECTOR.start()
+        else:
+            if FACE_DETECTOR.isAlive() is not True:
+                FACE_DETECTOR = None
+                
         if FACES is not None:
             if len(FACES) > 0:
-                #take_thread = Thread()
-                #take_photo.setRunFunction(photo_thread)
-                #take_photo.start()
-                print("photo")
-                #CAMERA.capture('/home/pi/Desktop/RPI_3_sync/' + str(int(math.floor(time.time() * 1000))) + '.jpg')
-    
-    low_res = LOW_RES_STREAM.next()
-    IMAGE = low_res.array
-    gray = cv2.cvtColor(IMAGE, cv2.COLOR_BGR2GRAY)
-    
-    # Run face detection as soon as one has ended
-    if FACE_DETECTOR is None:
-        FACE_DETECTOR = Thread()
-        FACE_DETECTOR.setRunFunction(face_detection)
-        FACE_DETECTOR.start()
-    else:
-        if FACE_DETECTOR.isAlive() is not True:
-            FACE_DETECTOR = None
-            
-    if FACES is not None:
-        if len(FACES) > 0:
-            if CURRENT_FACE is None:
-                CURRENT_FACE = FACES[0]
-                
-            # Always check for the closer face to the last one
-            # in order not to jump from a face to another
-            min_distance = float("inf")
-            for face in FACES:
-                distance = math.sqrt(math.pow(CURRENT_FACE[0] - face[0], 2) + math.pow(CURRENT_FACE[1] - face[1], 2))
-                if distance < min_distance:
-                    min_distance = distance
-                    CURRENT_FACE = face
+                if CURRENT_FACE is None:
+                    CURRENT_FACE = FACES[0]
                     
-            print(CURRENT_FACE)
-            cv2.circle(IMAGE, (CURRENT_FACE[0] + CURRENT_FACE[2] / 2, CURRENT_FACE[1] + CURRENT_FACE[3] / 2), int(CURRENT_FACE[2] / 3), (255, 255, 255), 1)
-        else:
-            CURRENT_FACE = None
-    
-    
-    CAPTURE.truncate(0)
-    #cv2.imshow("Frame", IMAGE)
-    
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord("q"):
-        STEPPER.stop()
-        STEPPER.enable(False)
-        CONTROL_THREAD.stop()
-        run = False
-        break
-    elif key == ord("r"):
-        servo_index_x = 0.45
+                # Always check for the closer face to the last one
+                # in order not to jump from a face to another
+                min_distance = float("inf")
+                for face in FACES:
+                    distance = math.sqrt(math.pow(CURRENT_FACE[0] - face[0], 2) + math.pow(CURRENT_FACE[1] - face[1], 2))
+                    if distance < min_distance:
+                        min_distance = distance
+                        CURRENT_FACE = face
+                        
+                print(CURRENT_FACE)
+                cv2.circle(IMAGE, (CURRENT_FACE[0] + CURRENT_FACE[2] / 2, CURRENT_FACE[1] + CURRENT_FACE[3] / 2), int(CURRENT_FACE[2] / 3), (255, 255, 255), 1)
+            else:
+                CURRENT_FACE = None
+        
+        
+        CAPTURE.truncate(0)
+        #cv2.imshow("Frame", IMAGE)
+        
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("q"):
+            STEPPER.stop()
+            STEPPER.enable(False)
+            CONTROL_THREAD.stop()
+            run = False
+            break
+        elif key == ord("r"):
+            servo_index_x = 0.45
+
+except KeyboardInterrupt:
+    STEPPER.stop()
+    STEPPER.enable(False)
+    CONTROL_THREAD.stop()
+    run = False
