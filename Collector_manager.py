@@ -127,12 +127,14 @@ def control_loop():
             stepper_index += 0.001
             
             # Check if there is a current face to track
+            LOCK.acquire()
             if CURRENT_FACE is not None:
                 face_pos_x = CURRENT_FACE[0] + CURRENT_FACE[2] / 2
                 delta_x = (face_pos_x - TRACKING_SCREEN[0] * 0.5) / (TRACKING_SCREEN[0] * 0.5)
                 servo_index_x += delta_x * -0.002
         
                 STEPPER.enable(True)
+                
                 face_pos_y = CURRENT_FACE[1] + CURRENT_FACE[3] / 2
                 delta_y = (face_pos_y - TRACKING_SCREEN[1] * 0.5) / (TRACKING_SCREEN[1] * 0.5)
                 STEPPER.setVelocity(delta_y * 3)
@@ -141,6 +143,7 @@ def control_loop():
                 index += 0.001
                 servo_target = 0.5 - math.sin(index) * 0.3
                 servo_index_x += (servo_target - servo_index_x) * 0.005
+            LOCK.release()
                 
             
             SERVO.set(0, servo_index_x)
@@ -153,6 +156,7 @@ def control_loop():
 STEPPER.start()
 STEPPER.enable(False)
 
+LOCK = threading.Lock()
 CONTROL_THREAD = Thread()
 CONTROL_THREAD.setRunFunction(control_loop)
 CONTROL_THREAD.start()
@@ -170,13 +174,14 @@ CAMERA.resolution = (int(1024 * 1.5), int(768 * 1.5))
 CAMERA.framerate = 32
 TRACKING_SCREEN = [int(160 * DEFINITION_MULTIPLIER), int(120 * DEFINITION_MULTIPLIER)]
 CAPTURE = PiRGBArray(CAMERA, size = (int(160 * DEFINITION_MULTIPLIER), int(120 * DEFINITION_MULTIPLIER)))
-DELAY_DELETE_IMAGES = 60 * 2 # seconds -> 2min
+DELAY_DELETE_IMAGES = 60 # seconds -> 2min
 LOW_RES_STREAM = CAMERA.capture_continuous(CAPTURE, format = "bgr", use_video_port = True, splitter_port = 2, resize = (int(160 * DEFINITION_MULTIPLIER), int(120 * DEFINITION_MULTIPLIER)))
 
 time.sleep(2.0)
 print("done warming up")
 
 # Remove all old images
+CAN_TAKE_A_PHOTO = False
 SYNC_FOLDER_PATH = "/home/pi/Desktop/RPI_3_sync/"
 file_list = glob.glob(SYNC_FOLDER_PATH + "*.jpg")
 for image in file_list:
@@ -188,9 +193,15 @@ try:
     while run:
         # Update current time
         CURRENT_TIME = time.time()
+        
+        if FACES is not None:
+            if len(FACES) > 0:
+                #print("photo")
+                CAN_TAKE_A_PHOTO = True
       
         # Take pictures every DELAY_IMAGES
-        if CURRENT_TIME >= NEXT_TIME:
+        if CURRENT_TIME >= NEXT_TIME and CAN_TAKE_A_PHOTO:
+            CAMERA.capture(SYNC_FOLDER_PATH + str(int(math.floor(time.time() * 1000))) + '.jpg')
             file_list = glob.glob(SYNC_FOLDER_PATH + "*.jpg")
             #print("Image taken: " + str(len(file_list)))
             for image in file_list:
@@ -198,12 +209,15 @@ try:
                 # Delete images that are older than the DELAY_DELETE_IMAGES
                 if name < CURRENT_TIME - DELAY_DELETE_IMAGES:
                     os.remove(image)
+                    
+            for i in range(len(file_list), 0):
+                if len(file_list) - i > 20:
+                    os.remove(file_list[i])    
+                
             
             NEXT_TIME += DELAY_IMAGES
-            if FACES is not None:
-                if len(FACES) > 0:
-                    #print("photo")
-                    CAMERA.capture(SYNC_FOLDER_PATH + str(int(math.floor(time.time() * 1000))) + '.jpg')
+            CAN_TAKE_A_PHOTO = False
+            
         
         low_res = LOW_RES_STREAM.next()
         IMAGE = low_res.array
@@ -255,4 +269,4 @@ except KeyboardInterrupt:
     STEPPER.stop()
     STEPPER.enable(False)
     CONTROL_THREAD.stop()
-    run = False
+    run = False          
